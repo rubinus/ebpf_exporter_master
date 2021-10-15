@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:20.04 as builder
 LABEL maintainer="rubinus.chu@mail.com"
 
 #替换aliyun
@@ -22,13 +22,27 @@ RUN  apt-get -y install aptitude
 #复制bcc源代码
 COPY bcc /root/bcc
 
-#生成libbcc的deb包
+#生成libbcc的deb包: libbcc_0.22.0-1_amd64.deb
 RUN cd /root/bcc && \
     /usr/lib/pbuilder/pbuilder-satisfydepends && \
     PARALLEL=$(nproc) ./scripts/build-deb.sh release
 
 #安装libbcc.so
-RUN dpkg -i /root/bcc/libbcc_*.deb && rm -rf /var/cache/apt
+FROM ubuntu:20.04
+LABEL maintainer="rubinus.chu@mail.com"
+
+#替换aliyun
+RUN  sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list
+RUN  apt-get clean && apt-get update
+
+#设置zone为国内
+ENV  TZ=Asia/Shanghai
+RUN  apt-get -y install tzdata && ln -sf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+RUN apt-get -y install dpkg-dev libelf1
+COPY --from=builder /root/bcc/libbcc_*.deb /tmp/libbcc.deb
+
+RUN dpkg -i /tmp/libbcc.deb
 
 #设置工作目录
 WORKDIR /go/
@@ -42,5 +56,4 @@ RUN ["chmod", "+x", "ebpf_exporter"]
 #设置Web端口，一般不用更改
 EXPOSE 9435
 
-
-ENTRYPOINT ["/go/ebpf_exporter","--config.file=examples/accept.yaml"]
+ENTRYPOINT ["/go/ebpf_exporter"]
