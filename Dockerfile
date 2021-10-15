@@ -33,16 +33,18 @@ LABEL maintainer="rubinus.chu@mail.com"
 
 #替换aliyun
 RUN  sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list
-RUN  apt-get clean && apt-get update
+RUN  apt clean && apt update
 
 #设置zone为国内
 ENV  TZ=Asia/Shanghai
-RUN  apt-get -y install tzdata && ln -sf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+RUN  apt -y install --no-install-recommends tzdata && ln -sf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-RUN apt-get -y install dpkg-dev libelf1
+RUN apt -y install --no-install-recommends libelf1
 COPY --from=builder /root/bcc/libbcc_*.deb /tmp/libbcc.deb
 
 RUN dpkg -i /tmp/libbcc.deb
+
+RUN rm -rf /tmp/* && rm -rf /var/cache/apk/* && rm -rf /var/lib/apt/lists/* && apt autoremove
 
 #设置工作目录
 WORKDIR /go/

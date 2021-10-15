@@ -8,7 +8,7 @@ go build -o ebpf_exporter
 cp cmd/ebpf_exporter/ebpf_exporter ./
 
 打包docker镜像
-docker build -t rubinus/ebpf_exporter:v1.0 .
+docker build -t rubinus/ebpf_exporter:v2.0 .
 
 Prometheus exporter for custom eBPF metrics.
 
